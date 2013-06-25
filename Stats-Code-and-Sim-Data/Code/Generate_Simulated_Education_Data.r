@@ -204,8 +204,11 @@ comment("
     vOnesStud <- as.vector(rep(1, nKids))
     vOnesTrt  <- as.vector(rep(1, nTrt))
     vOnesTrt.Plus1 <- as.vector(rep(1, nTrt+1))
-    mStudTrtDist <- sqrt( (StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))^2
-                        + (StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"]))^2 )*dDegMiConv
+    #L1 distance, L2 is commented out below
+    mStudTrtDist <- (abs(StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))
+                        + abs(StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"])))*dDegMiConv
+    #mStudTrtDist <- sqrt( (StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))^2
+     #                 + (StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"]))^2 )*dDegMiConv
     colnames(mStudTrtDist) <- "Dist to " %&% sTrtNames                
 
   # Generate Student-to-Treatment Assignments
