@@ -180,21 +180,23 @@ comment("
       names(mTrtParams) <- c("Intercept", "Interaction")
                         
   # Draw Treatment Center Locations
-    TrtLocSource <- read.dbf(CopaDir %&% "DFSS_COPA_Sites_GeoCoded.dbf")
-    TrtLocXYData <- cbind(TrtLocSource$X, TrtLocSource$Y)
+
+    TrtLocSource <- read.csv("Extracted Addresses for Simulated Students.csv", header=TRUE)
+    # J&B: We believe that X and Y are the latitude and longitude of the possible treatment centers
+    TrtLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
       colnames(TrtLocXYData) <- c("X", "Y")
-      TrtLocXYData <- TrtLocXYData[(TrtLocXYData[,"X"]!=0) & TrtLocXYData[,"Y"]!=0,]
+      TrtLocXYData <- TrtLocXYData[(!is.na(TrtLocXYData[,"X"])) & (!is.na(TrtLocXYData[,"Y"])),]
+    # J&B: Select the number of treatment centers from the list of possible treatment centers
     TrtXY <- TrtLocXYData[ceiling(runif(nTrt)*nrow(TrtLocXYData)), ]
-                        
+
     dfTrtData <- data.frame(mTrtParams, TrtXY)
 
-  # Draw Student Location Data
-                        
-    StudLocSource <- read.dbf(CopaDir %&% "DFSS_COPA_Clients_GeoCoded.dbf")
-    StudLocXYData <- cbind(TrtLocSource$X, TrtLocSource$Y)
+  # Draw Student Location Data- J&B
+    StudLocSource <- read.csv("Extracted Addresses for Simulated Students.csv", header = TRUE)
+    StudLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
     colnames(StudLocXYData) <- c("X", "Y")
-    StudLocXYData <- StudLocXYData[(StudLocXYData[,"X"]!=0) & StudLocXYData[,"Y"]!=0,]
-    StudXY <- StudLocXYData[ceiling(runif(nKids)*nrow(StudLocXYData)), ]                      
+    StudLocXYData <- StudLocXYData[(!is.na(StudLocXYData[,"X"])) & (!is.na(StudLocXYData[,"Y"])),]
+    StudXY <- StudLocXYData[ceiling(runif(nKids)*nrow(StudLocXYData)), ]                     
 
   # Generate Distances to Treatment
     
