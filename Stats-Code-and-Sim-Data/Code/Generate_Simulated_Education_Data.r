@@ -2,10 +2,26 @@
 #                                                                                  #
 # Develop Simulation Dataset for Analysis Mock-ups                                 #
 #                                                                                  #
-# Author: Nicholas Mader <nmader@chapinhall.org>                                   #
+# Author: Nicholas Mader <nmader@chapinhall.org>   
+#          
+#         Jette Henderson
+# 
 #                                                                                  #
 ####################################################################################
 
+   #-----------------------#
+   # Adapted Hungarian Notation #
+   #-----------------------#
+
+  # n number (as a counter)
+  # b binary
+  # c categorical
+  # s string
+  # df dataframe
+  # m matrix
+  # v vector
+  # d decimal (maybe we should change this to be clearer)
+  
   #-----------------------#
   # Set up the work space #
   #-----------------------#
@@ -25,43 +41,33 @@
   "%&%" <- function(...){paste(..., sep = "")}
   comment <- function(...){}
 
-
-#--------------------#
-# LIST OF PRIORITIES #
-#--------------------#
-
-comment("
-  # 1. Dosage in treatment
-  # 2. Generate multiple treatment sites
-  # -- Pause for sketching exhibits (Excel, powerpoint, and ggplot2)
-  # 3. Geocoding (XY draws, sampling from real student/school locations... maybe HS clients and providers, then jittered?)
-  # 4. School attendance outcome (modeled as negative binomial; see http://www.ats.ucla.edu/stat/r/dae/nbreg.htm )
-")
-
 #---------------------------------#
 #---------------------------------#
 # SPECIFY DATA GENERATING PROCESS #
 #---------------------------------#
 #---------------------------------#
 
+
   # Data is ~loosely~ reflective of a 9th grade class in CPS
-    
     nKids     <- 24268 # To make the sample equivalent to a year of HS enrollment in CPS
     nSchools  <- 106
-    sTrtName <- "Learn Good! Enrollment"
+    # TO DO: add in the generalized program names
   
   # Set skeleton for the data draws
   
-    sDataFeatures <- c("PretestDraw", "StudFactor", "TreatmentDraw" , "BpiDraw", "RaceDraw", "SchDraw", "GenderDraw", "FrlDraw") #
+    sDataFeatures <- c("InitTestDraw", "StudFactor", "TreatmentDraw" , "BpiDraw", "RaceDraw", "SchDraw", "GenderDraw", "FrlDraw") # Give a name to each one of the features we have for each of the kids. THis needs to be updated because any given kid will have tests back to the 3rd grade
+  # StudFactor is a fixed effect
+  # Note: define the rest of the features
+  # Note: Bpi needs to be taken out because we will not have that in our data
     nDataFeatures <- length(sDataFeatures) 
   
   # Generate a variance-Covariance matrix for all data features. These features will be transformed below into new distributions and magnitudes.
 
-    mVCV <- matrix(nrow = nDataFeatures, ncol = nDataFeatures, dimnames = list(sDataFeatures, sDataFeatures))
+    mVCV <- matrix(nrow = nDataFeatures, ncol = nDataFeatures, dimnames = list(sDataFeatures, sDataFeatures)) # this is more of a correlation matrix
     for (i in 1:nDataFeatures) {
       for (j in 1:i) {
         if (i == j) mVCV[i, j] <- 1 else {
-          rho <- max(min(rnorm(1, sd = 0.2), 1), -1) # This will result in correlations generally close to 0, and truncated within [0,1]
+          rho <- max(min(rnorm(1, sd = 0.2), 1), -1) # This will result in correlations generally close to 0, and truncated within [0,1]. The .2 is an arbitrary choice.
           mVCV[i,j] <- rho
           mVCV[j,i] <- rho # These assignments ensure that the variance covariance matrix is symmetric
         }
@@ -70,19 +76,19 @@ comment("
 
 
   # Make adjustments to the random draws of variable relationships, so emphasize the variable relationships that we want.
-
+  # This will take care of impossible correlations (e.g., feature a is positively and highly correlated with b and c, but b is highly and negatively correlated with c and a)
     NudgeVCV <- function(x1, x2, mult=NULL, newval=NULL) {
       # Note: the "<<-" assignment operator ensures that the assignment is applied to mVCV in the global environment (i.e. that the change persists after the function is run)
-
+      # These newval scalars are approximate (i.e., not calibrated)
       mVCV[x1, x2] <<- ifelse(is.null(newval), as.numeric(mult*abs(mVCV[x1, x2])), newval)
       mVCV[x2, x1] <<- ifelse(is.null(newval), as.numeric(mult*abs(mVCV[x1, x2])), newval)
     }
     
-    NudgeVCV("TreatmentDraw", "PretestDraw",   mult = -1)
+    NudgeVCV("TreatmentDraw", "InitTestDraw",   mult = -1) 
     NudgeVCV("TreatmentDraw", "BpiDraw",       mult = +1)
-    NudgeVCV("PretestDraw",   "BpiDraw",       mult = -1)
-    NudgeVCV("PretestDraw",   "RaceDraw",      mult = +1)
-    NudgeVCV("RaceDraw",      "StudFactor",    newval = +0.15)
+    NudgeVCV("InitTestDraw",   "BpiDraw",       mult = -1)
+    NudgeVCV("InitTestDraw",   "RaceDraw",      mult = +1)
+    NudgeVCV("RaceDraw",      "StudFactor",    newval = +0.15) 
     NudgeVCV("RaceDraw",      "BpiDraw",       newval = -0.20)
     NudgeVCV("RaceDraw",      "SchDraw",       newval = +0.45)
     # The randomly draw correlation is so low that it's worth just reassigning, rather than multiplying by a huge number
@@ -118,7 +124,7 @@ comment("
     bFrl <- as.numeric(pnorm(dfKidData$FrlDraw) <= 0.87)
 
   # Rescale Pretest to Mean 100, and broader standard deviation
-    Pretest <- round(dfKidData$PretestDraw*20 + 100)
+    Pretest <- round(dfKidData$InitTestDraw*20 + 100)
     #hist(PretestScaled)
 
   # Rescale Bpi
