@@ -21,6 +21,7 @@
   # m matrix
   # v vector
   # d decimal (maybe we should change this to be clearer)
+  # f factor
   
   #-----------------------#
   # Set up the work space #
@@ -90,8 +91,9 @@
     NudgeVCV("InitTestDraw",   "RaceDraw",      mult = +1)
     NudgeVCV("RaceDraw",      "StudFactor",    newval = +0.15) 
     NudgeVCV("RaceDraw",      "BpiDraw",       newval = -0.20)
-    NudgeVCV("RaceDraw",      "SchDraw",       newval = +0.45)
-    # The randomly draw correlation is so low that it's worth just reassigning, rather than multiplying by a huge number
+    NudgeVCV("RaceDraw",      "SchDraw",       newval = +0.45) # This is intended to reflect strong segregation across schools
+    # The randomly draw correlation is so low that it's worth just reassigning, 
+    # rather than multiplying by a huge number
     mVCV
 
 
@@ -101,7 +103,7 @@
 #--------------------------------------------------#
 #--------------------------------------------------#
 
-#### Draw a sample of kids from the above
+#### Draw a sample of kids using the correlation matrix generated above
 
   vMu = as.vector(rep(0, nDataFeatures))
   
@@ -118,7 +120,7 @@
   
   # Create Race
     cRaceDraw <- cut(pnorm(dfKidData$RaceDraw), breaks = c(0.0, 0.4, 0.5, 0.6, 1.0), include.lowest = TRUE)
-    cRace <- factor(cRaceDraw, labels = c("Sour", "Salty", "Bitter", "Sweet"))
+    fRace <- factor(cRaceDraw, labels = c("Sour", "Salty", "Bitter", "Sweet"))
 
   # Create Free/Reduced Price Lunch
     bFrl <- as.numeric(pnorm(dfKidData$FrlDraw) <= 0.87)
@@ -132,9 +134,9 @@
     #hist(Bpi, breaks = 0:ceiling(max(Bpi)))
 
   # Assign to treatment status 
-    bTreated <- as.numeric(-1.0 + (-0.01)*Pretest + (0.1)*Bpi + ifelse(cRace=="Sour", 0.5, 0.0) +
-                  ifelse(cRace=="Salty", 0.25, 0.0) + rnorm(nKids) > 0)
-    mean(bTreated)
+    bTreated <- as.numeric(-1.0 + (-0.01)*Pretest + (0.1)*Bpi + ifelse(fRace=="Sour", 0.5, 0.0) +
+                  ifelse(fRace=="Salty", 0.25, 0.0) + rnorm(nKids) > 0)
+    mean(bTreated) # this is a sanity check because we would expect the number of treated people to be low
 
 
 #---------------------------------------------------------------#
@@ -150,7 +152,7 @@
     sSchType <- as.character(factor(SchTypeDraw, labels = c("Academy", "School", "High School", "Preparatory", "Charter", "International")))
     sSchName <- paste(sSchNamesData$SchNamesList, sSchType)
 
-  # Combine information
+  # Combine information - this is supposed to emulate charter vs. non-charter
 
     cSchYinYang <- factor(runif(nSchools)<.2, labels = c("Yin", "Yang"))
     dSchEffect <- ((1:nSchools*5)/nSchools + rnorm(nSchools, sd = sqrt(5)) + ifelse(cSchYinYang=="Yin",0,4))
@@ -159,17 +161,17 @@
 
   # Assign Kids to Schools
 
-    SchAssignmentDraws <- cumsum((runif(nSchools)+1.0)/3)
-    SchAssignmentCuts <- SchAssignmentDraws/max(SchAssignmentDraws)
-    AssignedSchNum <- cut(pnorm(dfKidData$SchDraw), c(0,SchAssignmentCuts), labels=1:nSchools)
+    vSchAssignmentDraws <- cumsum((runif(nSchools)+1.0)/3) # The scalars here are a way of tinkering with the school sizes
+    vSchAssignmentCuts <- vSchAssignmentDraws/max(vSchAssignmentDraws)
+    AssignedSchNum <- cut(pnorm(dfKidData$SchDraw), c(0,vSchAssignmentCuts), labels=1:nSchools)
   
   # Merge Student and School Data
 
-    dfKidData <- data.frame(KidData, cGender, cRace, Pretest, bTreated, Bpi, AssignedSchNum)
+    dfKidData <- data.frame(KidData, cGender, fRace, Pretest, bTreated, Bpi, AssignedSchNum)
     dfMyData <- merge(x = dfKidData, y = dfSchData, by.x = "AssignedSchNum", by.y = "SchNum")
-    rm(AssignedSchNum, Bpi, cGender, cRace, Pretest, bTreated)
+    rm(AssignedSchNum, Bpi, cGender, fRace, Pretest, bTreated)
     attach(dfMyData)
-    aggregate(x = cbind(SchEffect, RaceDraw), by = list(cRace),    FUN = "mean")
+    aggregate(x = cbind(SchEffect, RaceDraw), by = list(fRace),    FUN = "mean")
 
 
 #-------------------------------------------------------------------------#
@@ -179,25 +181,25 @@
 #-------------------------------------------------------------------------#
 
   # Generate Names and Treatment Parameters for Treatment Centers
-  
+  # Note: Need to make treatment center code a function and import it in
     sTrtNames  <- c("Davonale", "Albany Lawn", "Loganwood", "Engle Park", "East Parkdale");
     nTrt <- length(sTrtNames)
     mTrtParams <- cbind(runif(nTrt)*10, runif(nTrt))
-      names(mTrtParams) <- c("Intercept", "Interaction")
+      names(mTrtParams) <- c("Intercept", "Interaction") 
                         
   # Draw Treatment Center Locations
 
     TrtLocSource <- read.csv("Extracted Addresses for Simulated Students.csv", header=TRUE)
-    # J&B: We believe that X and Y are the latitude and longitude of the possible treatment centers
+    # X and Y are the latitude and longitude of the possible treatment centers
     TrtLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
       colnames(TrtLocXYData) <- c("X", "Y")
       TrtLocXYData <- TrtLocXYData[(!is.na(TrtLocXYData[,"X"])) & (!is.na(TrtLocXYData[,"Y"])),]
-    # J&B: Select the number of treatment centers from the list of possible treatment centers
+    # Select the number of treatment centers from the list of possible treatment centers
     TrtXY <- TrtLocXYData[ceiling(runif(nTrt)*nrow(TrtLocXYData)), ]
 
     dfTrtData <- data.frame(mTrtParams, TrtXY)
 
-  # Draw Student Location Data- J&B
+  # Draw Student Location Data
     StudLocSource <- read.csv("Extracted Addresses for Simulated Students.csv", header = TRUE)
     StudLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
     colnames(StudLocXYData) <- c("X", "Y")
@@ -206,15 +208,15 @@
 
   # Generate Distances to Treatment
     
-    dDegMiConv <- 9.5
+    dDegMileConv <- 9.5
     vOnesStud <- as.vector(rep(1, nKids))
     vOnesTrt  <- as.vector(rep(1, nTrt))
     vOnesTrt.Plus1 <- as.vector(rep(1, nTrt+1))
     #L1 distance, L2 is commented out below
     mStudTrtDist <- (abs(StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))
-                        + abs(StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"])))*dDegMiConv
+                        + abs(StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"])))*dDegMileConv
     #mStudTrtDist <- sqrt( (StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))^2
-     #                 + (StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"]))^2 )*dDegMiConv
+     #                 + (StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"]))^2 )*dDegMileConv
     colnames(mStudTrtDist) <- "Dist to " %&% sTrtNames                
 
   # Generate Student-to-Treatment Assignments
@@ -222,8 +224,8 @@
     dfMyDataLoc <- data.frame(dfMyData, mStudTrtDist)
     mValErr     <- matrix(rlogis(nKids*nTrt), ncol = nTrt)
     mTrtValue   <- cbind(0,
-                    -3.0 + (-0.1)*mStudTrtDist + (-0.01)*mStudTrtDist^2 + (-0.01)*Pretest + (0.1)*Bpi + ifelse(cRace=="Sour", 0.5, 0.0) +
-      ifelse(cRace=="Salty", 0.25, 0.0) + mValErr)
+                    -3.0 + (-0.1)*mStudTrtDist + (-0.01)*mStudTrtDist^2 + (-0.01)*Pretest + (0.1)*Bpi + ifelse(fRace=="Sour", 0.5, 0.0) +
+      ifelse(fRace=="Salty", 0.25, 0.0) + mValErr)
     cTrt        <- max.col(mTrtValue)
     x <- rep(seq(1:(1+nTrt)), nKids)
     
@@ -270,7 +272,7 @@
 
   # Generate binary outcome, with instrument that can be used for selection. Interpretation is dropping out, shocked by ... pregnancy?
 
-    ystar <- 0.5 + (-0.03)*Pretest + 0.5*Bpi + ifelse(cRace == "Sour", 1.0, 0) + e_DO
+    ystar <- 0.5 + (-0.03)*Pretest + 0.5*Bpi + ifelse(fRace == "Sour", 1.0, 0) + e_DO
     DroppedOut <- as.numeric(ystar > 0)
     mean(DroppedOut)
 
@@ -291,11 +293,11 @@
 
   # # # Construct conditional averages and descriptives # # #
 
-    aggregate(x = cbind(Pretest, Posttest1, Posttest2, Bpi, StudFactor, SchEffect, bTreated), by = list(cRace),    FUN = "mean")
+    aggregate(x = cbind(Pretest, Posttest1, Posttest2, Bpi, StudFactor, SchEffect, bTreated), by = list(fRace),    FUN = "mean")
     aggregate(x = cbind(Pretest, Posttest1, Posttest2, Bpi, StudFactor, SchEffect, bTreated), by = list(cGender),  FUN = "mean")
     aggregate(x = cbind(Pretest, Posttest1, Posttest2, Bpi, StudFactor, SchEffect, bGender),  by = list(bTreated), FUN = "mean")
 
-    table(bTreated, cRace)
+    table(bTreated, fRace)
 
     cor(cbind(Pretest, Posttest1, Posttest2, Bpi, bTreated))
     var(SchEffect); var(Posttest1); var(Posttest2)
@@ -326,7 +328,7 @@
   # Save and Clean Up #
   #-------------------#
 
-    dfFinalData <- data.frame(StudId, bGender, cRace, bTreat, AssignedSchNum, SchType, Pretest, Posttest1, Posttest2)
+    dfFinalData <- data.frame(StudId, bGender, fRace, bTreat, AssignedSchNum, SchType, Pretest, Posttest1, Posttest2)
     write.csv()
 
     detach(e)
