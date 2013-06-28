@@ -1,3 +1,19 @@
+####################################################################################
+#                                                                                  #
+# Develop Simulation Dataset for Analysis Mock-ups                                 #
+#                                                                                  #
+# Author: Nicholas Mader <nmader@chapinhall.org>                                   #
+#         Breanna Miller <breanna.a.miller@gmail.com>                              #
+#         Jette Henderson <jette.henderson@gmail.com>                              #
+#         Vidhur Vohra <vvohra@gatech.edu>                                         #
+#                                                                                  #
+# Program Description: This code contains a function that takes as input the       #
+# number of organizations, and constructs a list of intervention organization      #
+# names from a list of positive adjectives                                         #
+#                                                                                  #
+####################################################################################
+
+
 makeOrgNames <- function(numOrg = nOrg){
   sOrgName <- read.table("~/adjectives.txt", header=F, quote="\"")
   
@@ -9,7 +25,7 @@ makeOrgNames <- function(numOrg = nOrg){
   sPossibleOrgName <- paste(sOrgName$Word, sOrgType)
   
   # Randomly select the number organization you want
-  nOrgs <- numTrt
+  nOrgs <- numOrg
   sOrgName <- sPossibleOrgName[sample(1:nPossibleOrgs,nOrgs,replace=F)]
   return(sOrgName)
 }
