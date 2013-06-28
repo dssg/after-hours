@@ -1,8 +1,6 @@
 ####################################################################################
 #                                                                                  #
-# Develop Simulation Dataset for Analysis Mock-ups                                 #
-#                                                                                  #
-# Author: Nicholas Mader <nmader@chapinhall.org>                                   #
+# Authors: Nicholas Mader <nmader@chapinhall.org>                                   #
 #         Breanna Miller <breanna.a.miller@gmail.com>                              #
 #         Jette Henderson <jette.henderson@gmail.com>                              #
 #         Vidhur Vohra <vvohra@gatech.edu>                                         #
