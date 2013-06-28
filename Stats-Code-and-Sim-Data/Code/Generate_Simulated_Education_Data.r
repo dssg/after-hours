@@ -33,6 +33,8 @@
   setwd(MyDir)
   CopaDir <- "C:/Users/nmader/Documents/Econ/Chapin Hall Projects/Chicago GIS Files/copa data/"
   help("Sweave", package="utils")
+  # Import function that generates the n treatment centers randomly
+  source("Generate_Treatment_Center_Names.R")
   
   set.seed(60637) # The seed value could be any number. I'm just picking an auspicious one.
   library("MASS")
@@ -182,8 +184,9 @@
 
   # Generate Names and Treatment Parameters for Treatment Centers
   # Note: Need to make treatment center code a function and import it in
-    sTrtNames  <- c("Davonale", "Albany Lawn", "Loganwood", "Engle Park", "East Parkdale");
-    nTrt <- length(sTrtNames)
+    #sTrtNames  <- c("Davonale", "Albany Lawn", "Loganwood", "Engle Park", "East Parkdale");
+    nTrt <- 20
+    sTrtNames <- makeTrtNames(n = nTrt)
     mTrtParams <- cbind(runif(nTrt)*10, runif(nTrt))
       names(mTrtParams) <- c("Intercept", "Interaction") 
                         
