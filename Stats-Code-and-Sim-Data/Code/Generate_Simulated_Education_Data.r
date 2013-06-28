@@ -1,11 +1,12 @@
 ####################################################################################
 #                                                                                  #
-# Develop Simulation Dataset for Analysis Mock-ups                                 #
+# Author: Nicholas Mader <nmader@chapinhall.org>                                   #
+#         Breanna Miller <breanna.a.miller@gmail.com>                              #
+#         Jette Henderson <jette.henderson@gmail.com>                              #
+#         Vidhur Vohra <vvohra@gatech.edu>                                         #
 #                                                                                  #
-# Author: Nicholas Mader <nmader@chapinhall.org>   
-#          
-#         Jette Henderson
-# 
+# Program Description: This code generates simulated academic, demographic, and    #
+# outcome data for a single cohort of students                                     #
 #                                                                                  #
 ####################################################################################
 
@@ -29,12 +30,13 @@
 
   rm(list=ls())
   options("error")
-  MyDir <- "C:/Users/nmader/Documents/GitHub/dssg-after-hours/Stats-Code-and-Sim-Data/Code"
-  setwd(MyDir)
-  CopaDir <- "C:/Users/nmader/Documents/Econ/Chapin Hall Projects/Chicago GIS Files/copa data/"
+ # MyDir <- "C:/Users/nmader/Documents/GitHub/dssg-after-hours/Stats-Code-and-Sim-Data/Code"
+ # setwd(MyDir)
+  setwd("~/after-hours/Stats-Code-and-Sim-Data/")
+#  CopaDir <- "C:/Users/nmader/Documents/Econ/Chapin Hall Projects/Chicago GIS Files/copa data/"
   help("Sweave", package="utils")
   # Import function that generates the n treatment centers randomly
-  source("Generate_Treatment_Center_Names.R")
+  source("Code/Generate_Treatment_Organization_Names.R")
   
   set.seed(60637) # The seed value could be any number. I'm just picking an auspicious one.
   library("MASS")
@@ -148,8 +150,7 @@
 #---------------------------------------------------------------#
 
   # Construct names for schools (comes from http://www.fanfiction.net/s/7739576/1/106-Stories-of-Us)
-
-    sSchNamesData <- read.csv2(file = paste(MyDir, "Raw Data/Random Words for School Names.csv", sep=""), sep = ",", header = TRUE)
+    sSchNamesData <- read.table("Raw-Data/Random_Words_for_School_Names.csv", header=T, quote="\"")
     SchTypeDraw <- cut(runif(nSchools), breaks = c(0.0, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0), include.lowest = TRUE)
     sSchType <- as.character(factor(SchTypeDraw, labels = c("Academy", "School", "High School", "Preparatory", "Charter", "International")))
     sSchName <- paste(sSchNamesData$SchNamesList, sSchType)
@@ -185,25 +186,25 @@
   # Generate Names and Treatment Parameters for Treatment Centers
   # Note: Need to make treatment center code a function and import it in
     #sTrtNames  <- c("Davonale", "Albany Lawn", "Loganwood", "Engle Park", "East Parkdale");
-    nTrt <- 20
-    sTrtNames <- makeTrtNames(n = nTrt)
-    mTrtParams <- cbind(runif(nTrt)*10, runif(nTrt))
-      names(mTrtParams) <- c("Intercept", "Interaction") 
+    nOrg <- 20
+    sOrgNames <- makeOrgNames(n = nOrg)
+    mOrgParams <- cbind(runif(nOrg)*10, runif(nOrg))
+      names(mOrgParams) <- c("Intercept", "Interaction") 
                         
   # Draw Treatment Center Locations
 
-    TrtLocSource <- read.csv("Extracted Addresses for Simulated Students.csv", header=TRUE)
+    TrtLocSource <- read.csv("Raw-Data/Extracted Addresses for Simulated Students.csv", header=TRUE)
     # X and Y are the latitude and longitude of the possible treatment centers
     TrtLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
       colnames(TrtLocXYData) <- c("X", "Y")
       TrtLocXYData <- TrtLocXYData[(!is.na(TrtLocXYData[,"X"])) & (!is.na(TrtLocXYData[,"Y"])),]
     # Select the number of treatment centers from the list of possible treatment centers
-    TrtXY <- TrtLocXYData[ceiling(runif(nTrt)*nrow(TrtLocXYData)), ]
+    TrtXY <- TrtLocXYData[ceiling(runif(nOrg)*nrow(TrtLocXYData)), ]
 
-    dfTrtData <- data.frame(mTrtParams, TrtXY)
+    dfTrtData <- data.frame(mOrgParams, TrtXY)
 
   # Draw Student Location Data
-    StudLocSource <- read.csv("Extracted Addresses for Simulated Students.csv", header = TRUE)
+    StudLocSource <- read.csv("Raw-Data/Extracted Addresses for Simulated Students.csv", header = TRUE)
     StudLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
     colnames(StudLocXYData) <- c("X", "Y")
     StudLocXYData <- StudLocXYData[(!is.na(StudLocXYData[,"X"])) & (!is.na(StudLocXYData[,"Y"])),]
@@ -213,30 +214,30 @@
     
     dDegMileConv <- 9.5
     vOnesStud <- as.vector(rep(1, nKids))
-    vOnesTrt  <- as.vector(rep(1, nTrt))
-    vOnesTrt.Plus1 <- as.vector(rep(1, nTrt+1))
+    vOnesTrt  <- as.vector(rep(1, nOrg))
+    vOnesTrt.Plus1 <- as.vector(rep(1, nOrg+1))
     #L1 distance, L2 is commented out below
     mStudTrtDist <- (abs(StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))
                         + abs(StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"])))*dDegMileConv
     #mStudTrtDist <- sqrt( (StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))^2
      #                 + (StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"]))^2 )*dDegMileConv
-    colnames(mStudTrtDist) <- "Dist to " %&% sTrtNames                
+    colnames(mStudTrtDist) <- "Dist to " %&% sOrgNames                
 
   # Generate Student-to-Treatment Assignments
                         
     dfMyDataLoc <- data.frame(dfMyData, mStudTrtDist)
-    mValErr     <- matrix(rlogis(nKids*nTrt), ncol = nTrt)
+    mValErr     <- matrix(rlogis(nKids*nOrg), ncol = nOrg)
     mTrtValue   <- cbind(0,
                     -3.0 + (-0.1)*mStudTrtDist + (-0.01)*mStudTrtDist^2 + (-0.01)*Pretest + (0.1)*Bpi + ifelse(fRace=="Sour", 0.5, 0.0) +
       ifelse(fRace=="Salty", 0.25, 0.0) + mValErr)
     cTrt        <- max.col(mTrtValue)
-    x <- rep(seq(1:(1+nTrt)), nKids)
+    x <- rep(seq(1:(1+nOrg)), nKids)
     
-    mTrtInd     <- ( (cTrt%*%t(vOnesTrt.Plus1)) == (vOnesStud %*% t(seq(1:(1+nTrt)))) )*1
+    mTrtInd     <- ( (cTrt%*%t(vOnesTrt.Plus1)) == (vOnesStud %*% t(seq(1:(1+nOrg)))) )*1
     table(cTrt)
 
     dfMyDataTrt <- data.frame(dfMyData, mTrtInd)
-    names(dfMyDataTrt) <- c(names(dfMyData), "No Treat", sTrtNames)
+    names(dfMyDataTrt) <- c(names(dfMyData), "No Treat", sOrgNames)
     detach(dfMyData)
     attach(dfMyDataTrt)
 
@@ -260,11 +261,11 @@
 
     bTreat <- (cTrt > 1)
     iTrtDose1  <- round((15.0 + (0.07)*(Pretest   - mean(Pretest))   - (0.1)*Bpi + rnorm(nKids)*3))
-    dTrtEff1 <- ((cbind(1, iTrtDose1) %*% t(mTrtParams))*mTrtInd[ , -1] ) %*% vOnesTrt
+    dTrtEff1 <- ((cbind(1, iTrtDose1) %*% t(mOrgParams))*mTrtInd[ , -1] ) %*% vOnesTrt
     Posttest1 <- 50 + 0.9*Pretest   + (-4.0)*Bpi + 3.0*bGender + dfMyData$SchEffect + 15*StudFactor + dTrtEff1 + e_Posttest1*30
 
     iTrtDose2  <- round((15.0 + (0.07)*(Posttest1 - mean(Posttest1)) - (0.1)*Bpi + rnorm(nKids)*3))
-    dTrtEff2 <- ((cbind(1, iTrtDose2) %*% t(mTrtParams))*mTrtInd[ , -1] ) %*% vOnesTrt
+    dTrtEff2 <- ((cbind(1, iTrtDose2) %*% t(mOrgParams))*mTrtInd[ , -1] ) %*% vOnesTrt
     Posttest2 <- 60 + 0.9*Posttest1 + (-4.0)*Bpi + 3.0*bGender + dfMyData$SchEffect + 15*StudFactor + dTrtEff2 + e_Posttest2*40
 
     summary(dTrtEff1[bTreat==0])
@@ -332,8 +333,8 @@
   #-------------------#
 
     dfFinalData <- data.frame(StudId, bGender, fRace, bTreat, AssignedSchNum, SchType, Pretest, Posttest1, Posttest2)
-    write.csv()
-
+    #write.csv
+    save(dfFinalData,file="Simulated-Data/dfFinalData.Rda")
     detach(e)
-    detach(dfMyData)
+    detach(dfMyDataTrt)
 
