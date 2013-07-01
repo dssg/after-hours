@@ -1,7 +1,7 @@
 # read in the file of adjectives
 
 makeTrtNames <- function(n = nTrt) {
-  sCenterName <- read.table("~/adjectives.txt", header=F, quote="\"")
+  sCenterName <- read.table("~/after-hours/Stats-Code-and-Sim-Data/Raw-Data/adjectives.txt", header=F, quote="\"")
 
   nPossibleCenters <- 372
   # Construct names for centers (comes from http://www.fanfiction.net/s/7739576/1/106-Stories-of-Us)

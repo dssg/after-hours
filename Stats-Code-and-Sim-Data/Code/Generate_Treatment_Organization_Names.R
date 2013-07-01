@@ -13,7 +13,7 @@
 
 
 makeOrgNames <- function(numOrg = nOrg){
-  sOrgName <- read.table("~/adjectives.txt", header=F, quote="\"")
+  sOrgName <- read.table("~/after-hours/Stats-Code-and-Sim-Data/Raw-Data/adjectives.txt", header=F, quote="\"")
   
   nPossibleOrgs <- 372
   # Construct names for Orgs (comes from http://www.fanfiction.net/s/7739576/1/106-Stories-of-Us)
@@ -27,3 +27,5 @@ makeOrgNames <- function(numOrg = nOrg){
   sOrgName <- sPossibleOrgName[sample(1:nPossibleOrgs,nOrgs,replace=F)]
   return(sOrgName)
 }
+
+makeOrgNames(5)
