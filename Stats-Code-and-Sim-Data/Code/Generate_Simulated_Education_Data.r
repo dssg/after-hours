@@ -334,7 +334,7 @@
 
     dfFinalData <- data.frame(StudId, bGender, fRace, bTreat, AssignedSchNum, SchType, Pretest, Posttest1, Posttest2)
     #write.csv
-    save(dfFinalData,file="Simulated-Data/dfFinalData.Rda")
+    save(dfFinalData,file="~/after-hours/Stats-Code-and-Sim-Data/Simulated-Data/dfFinalData.Rda")
     detach(e)
     detach(dfMyDataTrt)
 
