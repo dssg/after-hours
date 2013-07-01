@@ -332,9 +332,10 @@
   # Save and Clean Up #
   #-------------------#
 
-    dfFinalData <- data.frame(StudId, bGender, fRace, bTreat, AssignedSchNum, SchType, Pretest, Posttest1, Posttest2)
+    dfFinalData <- data.frame(StudId, cGender, fRace, bTreat, AssignedSchNum, SchType, Pretest, Posttest1, Posttest2)
     #write.csv
     save(dfFinalData,file="~/after-hours/Stats-Code-and-Sim-Data/Simulated-Data/dfFinalData.Rda")
+    save(dfMyData,file="~/after-hours/Stats-Code-and-Sim-Data/Simulated-Data/dfMyData.Rda")
     detach(e)
     detach(dfMyDataTrt)
 
