@@ -60,10 +60,9 @@
   
   # Set skeleton for the data draws
   
-    sDataFeatures <- c("InitTestDraw", "StudFactor", "TreatmentDraw" , "BpiDraw", "RaceDraw", "SchDraw", "GenderDraw", "FrlDraw") # Give a name to each one of the features we have for each of the kids. THis needs to be updated because any given kid will have tests back to the 3rd grade
+    sDataFeatures <- c("InitTestDraw", "StudFactor", "TreatmentDraw", "RaceDraw", "SchDraw", "GenderDraw", "FrlDraw") # Give a name to each one of the features we have for each of the kids. THis needs to be updated because any given kid will have tests back to the 3rd grade
   # StudFactor is a fixed effect
   # Note: define the rest of the features
-  # Note: Bpi needs to be taken out because we will not have that in our data
     nDataFeatures <- length(sDataFeatures) 
   
   # Generate a variance-Covariance matrix for all data features. These features will be transformed below into new distributions and magnitudes.
@@ -90,11 +89,8 @@
     }
     
     NudgeVCV("TreatmentDraw", "InitTestDraw",   mult = -1) 
-    NudgeVCV("TreatmentDraw", "BpiDraw",       mult = +1)
-    NudgeVCV("InitTestDraw",   "BpiDraw",       mult = -1)
     NudgeVCV("InitTestDraw",   "RaceDraw",      mult = +1)
     NudgeVCV("RaceDraw",      "StudFactor",    newval = +0.15) 
-    NudgeVCV("RaceDraw",      "BpiDraw",       newval = -0.20)
     NudgeVCV("RaceDraw",      "SchDraw",       newval = +0.45) # This is intended to reflect strong segregation across schools
     # The randomly draw correlation is so low that it's worth just reassigning, 
     # rather than multiplying by a huge number
@@ -133,12 +129,8 @@
     Pretest <- round(dfKidData$InitTestDraw*20 + 100)
     #hist(PretestScaled)
 
-  # Rescale Bpi
-    Bpi <- round(exp(dfKidData$BpiDraw/1.5 + 2)/3)  # NSM: this is messing with things to get something relatively flat, with an interesting tail
-    #hist(Bpi, breaks = 0:ceiling(max(Bpi)))
-
   # Assign to treatment status 
-    bTreated <- as.numeric(-1.0 + (-0.01)*Pretest + (0.1)*Bpi + ifelse(fRace=="Sour", 0.5, 0.0) +
+    bTreated <- as.numeric(-1.0 + (-0.01)*Pretest + ifelse(fRace=="Sour", 0.5, 0.0) +
                   ifelse(fRace=="Salty", 0.25, 0.0) + rnorm(nKids) > 0)
     mean(bTreated) # this is a sanity check because we would expect the number of treated people to be low
 
@@ -170,9 +162,9 @@
   
   # Merge Student and School Data
 
-    dfKidData <- data.frame(KidData, cGender, fRace, Pretest, bTreated, Bpi, AssignedSchNum)
+    dfKidData <- data.frame(KidData, cGender, fRace, Pretest, bTreated, AssignedSchNum)
     dfMyData <- merge(x = dfKidData, y = dfSchData, by.x = "AssignedSchNum", by.y = "SchNum")
-    rm(AssignedSchNum, Bpi, cGender, fRace, Pretest, bTreated)
+    rm(AssignedSchNum, cGender, fRace, Pretest, bTreated)
     attach(dfMyData)
     aggregate(x = cbind(SchEffect, RaceDraw), by = list(fRace),    FUN = "mean")
 
@@ -228,7 +220,7 @@
     dfMyDataLoc <- data.frame(dfMyData, mStudTrtDist)
     mValErr     <- matrix(rlogis(nKids*nOrg), ncol = nOrg)
     mTrtValue   <- cbind(0,
-                    -3.0 + (-0.1)*mStudTrtDist + (-0.01)*mStudTrtDist^2 + (-0.01)*Pretest + (0.1)*Bpi + ifelse(fRace=="Sour", 0.5, 0.0) +
+                    -3.0 + (-0.1)*mStudTrtDist + (-0.01)*mStudTrtDist^2 + (-0.01)*Pretest + ifelse(fRace=="Sour", 0.5, 0.0) +
       ifelse(fRace=="Salty", 0.25, 0.0) + mValErr)
     cTrt        <- max.col(mTrtValue)
     x <- rep(seq(1:(1+nOrg)), nKids)
@@ -260,13 +252,13 @@
   # The Data Generating Process is the same for both posttests except for increasing mean and increasing error variance
 
     bTreat <- (cTrt > 1)
-    iTrtDose1  <- round((15.0 + (0.07)*(Pretest   - mean(Pretest))   - (0.1)*Bpi + rnorm(nKids)*3))
+    iTrtDose1  <- round((15.0 + (0.07)*(Pretest   - mean(Pretest)) + rnorm(nKids)*3))
     dTrtEff1 <- ((cbind(1, iTrtDose1) %*% t(mOrgParams))*mTrtInd[ , -1] ) %*% vOnesTrt
-    Posttest1 <- 50 + 0.9*Pretest   + (-4.0)*Bpi + 3.0*bGender + dfMyData$SchEffect + 15*StudFactor + dTrtEff1 + e_Posttest1*30
+    Posttest1 <- 50 + 0.9*Pretest + 3.0*bGender + dfMyData$SchEffect + 15*StudFactor + dTrtEff1 + e_Posttest1*30
 
-    iTrtDose2  <- round((15.0 + (0.07)*(Posttest1 - mean(Posttest1)) - (0.1)*Bpi + rnorm(nKids)*3))
+    iTrtDose2  <- round((15.0 + (0.07)*(Posttest1 - mean(Posttest1)) + rnorm(nKids)*3))
     dTrtEff2 <- ((cbind(1, iTrtDose2) %*% t(mOrgParams))*mTrtInd[ , -1] ) %*% vOnesTrt
-    Posttest2 <- 60 + 0.9*Posttest1 + (-4.0)*Bpi + 3.0*bGender + dfMyData$SchEffect + 15*StudFactor + dTrtEff2 + e_Posttest2*40
+    Posttest2 <- 60 + 0.9*Posttest1 + 3.0*bGender + dfMyData$SchEffect + 15*StudFactor + dTrtEff2 + e_Posttest2*40
 
     summary(dTrtEff1[bTreat==0])
     summary(dTrtEff1[bTreat==1])
@@ -276,14 +268,14 @@
 
   # Generate binary outcome, with instrument that can be used for selection. Interpretation is dropping out, shocked by ... pregnancy?
 
-    ystar <- 0.5 + (-0.03)*Pretest + 0.5*Bpi + ifelse(fRace == "Sour", 1.0, 0) + e_DO
+    ystar <- 0.5 + (-0.03)*Pretest + ifelse(fRace == "Sour", 1.0, 0) + e_DO
     DroppedOut <- as.numeric(ystar > 0)
     mean(DroppedOut)
 
   # Generate continuous outcome observed conditional on binary outcome
     # Interpretation is Act conditional on reaching an age where student would apply to college.
 
-    ActTrue <- 15 + 0.05*Pretest + (-0.5)*Bpi + e_Act
+    ActTrue <- 15 + 0.05*Pretest + e_Act
     Act <- ActTrue
     is.na(Act) <- (DroppedOut == 1)
     summary(Act)
@@ -297,17 +289,17 @@
 
   # # # Construct conditional averages and descriptives # # #
 
-    aggregate(x = cbind(Pretest, Posttest1, Posttest2, Bpi, StudFactor, SchEffect, bTreated), by = list(fRace),    FUN = "mean")
-    aggregate(x = cbind(Pretest, Posttest1, Posttest2, Bpi, StudFactor, SchEffect, bTreated), by = list(cGender),  FUN = "mean")
-    aggregate(x = cbind(Pretest, Posttest1, Posttest2, Bpi, StudFactor, SchEffect, bGender),  by = list(bTreated), FUN = "mean")
+    aggregate(x = cbind(Pretest, Posttest1, Posttest2, StudFactor, SchEffect, bTreated), by = list(fRace),    FUN = "mean")
+    aggregate(x = cbind(Pretest, Posttest1, Posttest2, StudFactor, SchEffect, bTreated), by = list(cGender),  FUN = "mean")
+    aggregate(x = cbind(Pretest, Posttest1, Posttest2, StudFactor, SchEffect, bGender),  by = list(bTreated), FUN = "mean")
 
     table(bTreated, fRace)
 
-    cor(cbind(Pretest, Posttest1, Posttest2, Bpi, bTreated))
+    cor(cbind(Pretest, Posttest1, Posttest2, bTreated))
     var(SchEffect); var(Posttest1); var(Posttest2)
 
 
-  # # # Draw quantile curve of how pretests, Bpi, and different racial composition varies across schools # # #
+  # # # Draw quantile curve of how pretests and different racial composition varies across schools # # #
 
     # ....
 
@@ -316,14 +308,14 @@
     # NSM: I need to return to this section. There are more visualizations to explore here, and I've changed the data structure a decent amount since
       # first writing this section up
 
-    dTreated.Bpi <- bTreated * Bpi
     SchInds  <- model.matrix(~AssignedSchNum)
-    #MyReg1  <- lm(Posttest1 ~ Pretest   + Bpi + bGender + bTreated + SchInds)
+    #MyReg1  <- lm(Posttest1 ~ Pretest + bGender + bTreated + SchInds)
     #summary(MyReg1)
-    #MyReg2  <- lm(Posttest2 ~ Posttest1 + Bpi + bGender + bTreated + SchInds)
+    #MyReg2  <- lm(Posttest2 ~ Posttest1 + bGender + bTreated + SchInds)
     #summary(MyReg2)
   
     # Inspect bias if Bpi is not controlled for (since we may initially withhold this from the Data Campers)
+    # When removing Bpi (since it will not be included in our dataset) not sure whether to remove this
     MyReg    <- lm(Posttest1 ~ Pretest + bGender + bTreated + SchInds)
     summary(MyReg)
 
