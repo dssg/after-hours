@@ -34,7 +34,7 @@
  # setwd(MyDir)
   setwd("~/after-hours/Stats-Code-and-Sim-Data/")
 #  CopaDir <- "C:/Users/nmader/Documents/Econ/Chapin Hall Projects/Chicago GIS Files/copa data/"
-  help("Sweave", package="utils")
+  #help("Sweave", package="utils")
   # Import function that generates the n treatment centers randomly
   source("Code/Generate_Treatment_Organization_Names.R")
   
@@ -124,6 +124,7 @@
 
   # Create Free/Reduced Price Lunch
     bFrl <- as.numeric(pnorm(dfKidData$FrlDraw) <= 0.87)
+    fFrl <- factor(bFrl, levels = c(1,0), labels = c("Yes", "No"))
 
   # Rescale Pretest to Mean 100, and broader standard deviation
     Pretest <- round(dfKidData$InitTestDraw*20 + 100)
@@ -162,7 +163,7 @@
   
   # Merge Student and School Data
 
-    dfKidData <- data.frame(KidData, cGender, fRace, Pretest, bTreated, AssignedSchNum)
+    dfKidData <- data.frame(KidData, cGender, fRace, fFrl, Pretest, bTreated, AssignedSchNum)
     dfMyData <- merge(x = dfKidData, y = dfSchData, by.x = "AssignedSchNum", by.y = "SchNum")
     rm(AssignedSchNum, cGender, fRace, Pretest, bTreated)
     attach(dfMyData)

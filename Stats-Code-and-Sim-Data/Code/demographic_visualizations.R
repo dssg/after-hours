@@ -52,3 +52,19 @@ gender +
 # without legend, label on x-axis
 gender + 
   theme(axis.ticks = element_blank(), legend.position="none", axis.text.x=element_text(size=12, color="black"))
+
+
+# Free/Reduced Lunch bar graph
+
+# with legend to the side, no labels on x-axis
+frl <- ggplot(data = dfMyData, mapping = aes(x = fFrl, fill = factor(fFrl))) +
+  labs(title = 'Percentage of Students Receiving Free or Reduced Price Lunch', x = '', y = 'Percent of Student Population') + 
+  geom_histogram(aes(y=..count../sum(..count..)))
+
+frl + 
+  scale_fill_discrete(name="Free Reduced Lunch Status", breaks=attributes(fFrl)$levels) + 
+  theme(axis.ticks = element_blank(), axis.text.x = element_blank())
+
+# without legend, label on x-axis
+frl + 
+  theme(axis.ticks = element_blank(), legend.position="none", axis.text.x=element_text(size=12, color="black"))
