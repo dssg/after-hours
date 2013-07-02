@@ -21,7 +21,23 @@ attach(dfMyData)
 #* "Standard" variables: avg % by race, % male/female, % free/reduced price lunch, % English Language learners, avg attendance rate, avg math score, 
 # avg reading score, GPA this year, "on-track" status if in HS, binary indicator of being suspended for > 5 days this year.  
 
-# Avg % by race
+
+# Avg % by race bar graph
+
+# with legend to the side, no labels on x-axis
+race <- ggplot(data=dfMyData, mapping= aes(x = fRace, fill = factor(fRace))) +
+  labs(title = 'Percentage of Students by Race', x = '', y = 'Percent of Student Population') +
+  geom_histogram(aes(y=..count../sum(..count..)))
+
+race +
+  scale_fill_discrete(name="Race", breaks=attributes(fRace)$levels) +
+  theme(axis.ticks = element_blank(), axis.text.x = element_blank())
+
+# without legend, label on x-axis
+race + 
+  theme(axis.ticks = element_blank(), legend.position="none", axis.text.x=element_text(size=12, color="black"))
+
+
 # Gender percentage bar graph
 
 # with legend to the side, no labels on x-axis
