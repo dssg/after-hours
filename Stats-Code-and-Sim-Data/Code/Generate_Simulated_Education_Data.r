@@ -189,8 +189,8 @@
     TrtLocSource <- read.csv("Raw-Data/Extracted Addresses for Simulated Students.csv", header=TRUE)
     # X and Y are the latitude and longitude of the possible treatment centers
     TrtLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
-      colnames(TrtLocXYData) <- c("X", "Y")
-      TrtLocXYData <- TrtLocXYData[(!is.na(TrtLocXYData[,"X"])) & (!is.na(TrtLocXYData[,"Y"])),]
+      colnames(TrtLocXYData) <- c("TrtX", "TrtY")
+      TrtLocXYData <- TrtLocXYData[(!is.na(TrtLocXYData[,"TrtX"])) & (!is.na(TrtLocXYData[,"TrtY"])),]
     # Select the number of treatment centers from the list of possible treatment centers
     TrtXY <- TrtLocXYData[ceiling(runif(nOrg)*nrow(TrtLocXYData)), ]
 
@@ -199,8 +199,8 @@
   # Draw Student Location Data
     StudLocSource <- read.csv("Raw-Data/Extracted Addresses for Simulated Students.csv", header = TRUE)
     StudLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
-    colnames(StudLocXYData) <- c("X", "Y")
-    StudLocXYData <- StudLocXYData[(!is.na(StudLocXYData[,"X"])) & (!is.na(StudLocXYData[,"Y"])),]
+    colnames(StudLocXYData) <- c("StudX", "StudY")
+    StudLocXYData <- StudLocXYData[(!is.na(StudLocXYData[,"StudX"])) & (!is.na(StudLocXYData[,"StudY"])),]
     StudXY <- StudLocXYData[ceiling(runif(nKids)*nrow(StudLocXYData)), ]                     
 
   # Generate Distances to Treatment
@@ -210,10 +210,10 @@
     vOnesTrt  <- as.vector(rep(1, nOrg))
     vOnesTrt.Plus1 <- as.vector(rep(1, nOrg+1))
     #L1 distance, L2 is commented out below
-    mStudTrtDist <- (abs(StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))
-                        + abs(StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"])))*dDegMileConv
-    #mStudTrtDist <- sqrt( (StudXY[, "X"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "X"]))^2
-     #                 + (StudXY[, "Y"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "Y"]))^2 )*dDegMileConv
+    mStudTrtDist <- (abs(StudXY[, "StudX"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "TrtX"]))
+                        + abs(StudXY[, "StudY"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "TrtY"])))*dDegMileConv
+    #mStudTrtDist <- sqrt( (StudXY[, "StudX"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "TrtX"]))^2
+     #                 + (StudXY[, "StudY"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "TrtY"]))^2 )*dDegMileConv
     colnames(mStudTrtDist) <- "Dist to " %&% sOrgNames                
 
   # Generate Student-to-Treatment Assignments
@@ -229,10 +229,13 @@
     mTrtInd     <- ( (cTrt%*%t(vOnesTrt.Plus1)) == (vOnesStud %*% t(seq(1:(1+nOrg)))) )*1
     table(cTrt)
 
-    fTrtAssign = factor(mTrtInd%*%(0:20), labels = c("No Treat", sOrgNames))
+  # Generate Factor Version of Student-to-Treatment Assignments
+    fTrtAssign = factor(mTrtInd%*%(0:20), labels = c("No Treatment", sOrgNames))
+  # Add Location of Assigned Treatment for Each Student
+    mTrtAssignXY = mTrtInd%*%rbind(rep(0,2),TrtXY)
 
-    dfMyDataTrt <- data.frame(dfMyData, mTrtInd, fTrtAssign)
-    names(dfMyDataTrt) <- c(names(dfMyData), "No Treat", sOrgNames, "Treatment Center Name")
+    dfMyDataTrt <- data.frame(dfMyData, mTrtInd, fTrtAssign, mTrtAssignXY, StudXY)
+    names(dfMyDataTrt) <- c(names(dfMyData), "No Treat", sOrgNames, "Treatment Center Name", colnames(mTrtAssignXY), colnames(StudXY))
     detach(dfMyData)
     attach(dfMyDataTrt)
 
