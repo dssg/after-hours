@@ -229,8 +229,10 @@
     mTrtInd     <- ( (cTrt%*%t(vOnesTrt.Plus1)) == (vOnesStud %*% t(seq(1:(1+nOrg)))) )*1
     table(cTrt)
 
-    dfMyDataTrt <- data.frame(dfMyData, mTrtInd)
-    names(dfMyDataTrt) <- c(names(dfMyData), "No Treat", sOrgNames)
+    fTrtAssign = factor(mTrtInd%*%(0:20), labels = c("No Treat", sOrgNames))
+
+    dfMyDataTrt <- data.frame(dfMyData, mTrtInd, fTrtAssign)
+    names(dfMyDataTrt) <- c(names(dfMyData), "No Treat", sOrgNames, "Treatment Center Name")
     detach(dfMyData)
     attach(dfMyDataTrt)
 
