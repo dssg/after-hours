@@ -10,9 +10,9 @@
 #                                                                                  #
 ####################################################################################
 
-   #-----------------------#
-   # Adapted Hungarian Notation #
-   #-----------------------#
+  #----------------------------#
+  # Adapted Hungarian Notation #
+  #----------------------------#
 
   # n number (as a counter)
   # b binary
@@ -30,13 +30,10 @@
 
   rm(list=ls())
   options("error")
- # MyDir <- "C:/Users/nmader/Documents/GitHub/dssg-after-hours/Stats-Code-and-Sim-Data/Code"
- # setwd(MyDir)
-  setwd("~/after-hours/Stats-Code-and-Sim-Data/")
-#  CopaDir <- "C:/Users/nmader/Documents/Econ/Chapin Hall Projects/Chicago GIS Files/copa data/"
-  #help("Sweave", package="utils")
+  try(setwd("~/after-hours/Stats-Code-and-Sim-Data/"))
+  setwd("C:/Users/nmader/Documents/GitHub/dssg-after-hours/after-hours/Stats-Code-and-Sim-Data")
   # Import function that generates the n treatment centers randomly
-  source("Code/Generate_Treatment_Organization_Names.R")
+  source("./Code/Generate_Treatment_Organization_Names.R")
   
   set.seed(60637) # The seed value could be any number. I'm just picking an auspicious one.
   library("MASS")
@@ -56,7 +53,7 @@
   # Data is ~loosely~ reflective of a 9th grade class in CPS
     nKids     <- 24268 # To make the sample equivalent to a year of HS enrollment in CPS
     nSchools  <- 106
-    # TO DO: add in the generalized program names
+    nOrg <- 20
   
   # Set skeleton for the data draws
   
@@ -119,7 +116,7 @@
     cGender <- ifelse(1==bGender, "Treble", "Bass")  # Convert the gender distinction into an abstract one
   
   # Create Race
-    cRaceDraw <- cut(pnorm(dfKidData$RaceDraw), breaks = c(0.0, 0.4, 0.5, 0.6, 1.0), include.lowest = TRUE)
+    cRaceDraw <- cut(pnorm(dfKidData$RaceDraw), breaks = c(0.0, 0.4, 0.7, 0.9, 1.0), include.lowest = TRUE)
     fRace <- factor(cRaceDraw, labels = c("Sour", "Salty", "Bitter", "Sweet"))
 
   # Create Free/Reduced Price Lunch
@@ -130,7 +127,7 @@
     Pretest <- round(dfKidData$InitTestDraw*20 + 100)
     #hist(PretestScaled)
 
-  # Assign to treatment status 
+  # Assign to binary treatment status 
     bTreated <- as.numeric(-1.0 + (-0.01)*Pretest + ifelse(fRace=="Sour", 0.5, 0.0) +
                   ifelse(fRace=="Salty", 0.25, 0.0) + rnorm(nKids) > 0)
     mean(bTreated) # this is a sanity check because we would expect the number of treated people to be low
@@ -163,11 +160,11 @@
   
   # Merge Student and School Data
 
-    dfKidData <- data.frame(KidData, cGender, fRace, fFrl, Pretest, bTreated, AssignedSchNum)
+    dfKidData <- data.frame(StudId, KidData, cGender, fRace, fFrl, Pretest, bTreated, AssignedSchNum)
     dfMyData <- merge(x = dfKidData, y = dfSchData, by.x = "AssignedSchNum", by.y = "SchNum")
     rm(AssignedSchNum, cGender, fRace, Pretest, bTreated)
     attach(dfMyData)
-    aggregate(x = cbind(SchEffect, RaceDraw), by = list(fRace),    FUN = "mean")
+    aggregate(x = cbind(SchEffect, RaceDraw), by = list(fRace), FUN = "mean") # Examine average school quality by race
 
 
 #-------------------------------------------------------------------------#
@@ -178,34 +175,31 @@
 
   # Generate Names and Treatment Parameters for Treatment Centers
   # Note: Need to make treatment center code a function and import it in
-    #sTrtNames  <- c("Davonale", "Albany Lawn", "Loganwood", "Engle Park", "East Parkdale");
-    nOrg <- 20
     sOrgNames <- makeOrgNames(n = nOrg)
     mOrgParams <- cbind(runif(nOrg)*10, runif(nOrg))
-      names(mOrgParams) <- c("Intercept", "Interaction") 
+      colnames(mOrgParams) <- c("Intercept", "Interaction") 
+      rownames(mOrgParams) <- sOrgNames
                         
   # Draw Treatment Center Locations
 
     TrtLocSource <- read.csv("Raw-Data/Extracted Addresses for Simulated Students.csv", header=TRUE)
-    # X and Y are the latitude and longitude of the possible treatment centers
     TrtLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
       colnames(TrtLocXYData) <- c("TrtX", "TrtY")
       TrtLocXYData <- TrtLocXYData[(!is.na(TrtLocXYData[,"TrtX"])) & (!is.na(TrtLocXYData[,"TrtY"])),]
-    # Select the number of treatment centers from the list of possible treatment centers
-    TrtXY <- TrtLocXYData[ceiling(runif(nOrg)*nrow(TrtLocXYData)), ]
+    TrtXY <- data.frame(TrtLocXYData)[sample(1:nrow(TrtLocXYData), nOrg), ]
 
     dfTrtData <- data.frame(mOrgParams, TrtXY)
 
   # Draw Student Location Data
     StudLocSource <- read.csv("Raw-Data/Extracted Addresses for Simulated Students.csv", header = TRUE)
     StudLocXYData <- cbind(TrtLocSource$LATITUDE, TrtLocSource$LONGITUDE)
-    colnames(StudLocXYData) <- c("StudX", "StudY")
-    StudLocXYData <- StudLocXYData[(!is.na(StudLocXYData[,"StudX"])) & (!is.na(StudLocXYData[,"StudY"])),]
-    StudXY <- StudLocXYData[ceiling(runif(nKids)*nrow(StudLocXYData)), ]                     
+      colnames(StudLocXYData) <- c("StudX", "StudY")
+      StudLocXYData <- StudLocXYData[!is.na(StudLocXYData[,"StudX"]) & !is.na(StudLocXYData[,"StudY"]), ]
+    StudXY <- data.frame(StudLocXYData)[sample(1:nrow(StudLocXYData), nKids), ]
 
   # Generate Distances to Treatment
     
-    dDegMileConv <- 9.5
+    dDegMileConv <- 69 # For conversion, see http://www.dslreports.com/faq/14295 ... note that longitude needs slightly more detailed consideration
     vOnesStud <- as.vector(rep(1, nKids))
     vOnesTrt  <- as.vector(rep(1, nOrg))
     vOnesTrt.Plus1 <- as.vector(rep(1, nOrg+1))
@@ -214,17 +208,17 @@
                         + abs(StudXY[, "StudY"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "TrtY"])))*dDegMileConv
     #mStudTrtDist <- sqrt( (StudXY[, "StudX"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "TrtX"]))^2
      #                 + (StudXY[, "StudY"] %*% t(vOnesTrt) - vOnesStud %*% t(TrtXY[, "TrtY"]))^2 )*dDegMileConv
-    colnames(mStudTrtDist) <- "Dist to " %&% sOrgNames                
+    colnames(mStudTrtDist) <- sOrgNames
+    rownames(mStudTrtDist) <- StudId
 
   # Generate Student-to-Treatment Assignments
                         
-    dfMyDataLoc <- data.frame(dfMyData, mStudTrtDist)
+    # dfMyDataLoc <- data.frame(dfMyData, mStudTrtDist)
     mValErr     <- matrix(rlogis(nKids*nOrg), ncol = nOrg)
     mTrtValue   <- cbind(0,
-                    -3.0 + (-0.1)*mStudTrtDist + (-0.01)*mStudTrtDist^2 + (-0.01)*Pretest + ifelse(fRace=="Sour", 0.5, 0.0) +
+                    -3.0 + (-0.1)*mStudTrtDist + (-0.01)*mStudTrtDist^2 + (-0.02)*Pretest + ifelse(fRace=="Sour", 0.5, 0.0) +
       ifelse(fRace=="Salty", 0.25, 0.0) + mValErr)
     cTrt        <- max.col(mTrtValue)
-    x <- rep(seq(1:(1+nOrg)), nKids)
     
     mTrtInd     <- ( (cTrt%*%t(vOnesTrt.Plus1)) == (vOnesStud %*% t(seq(1:(1+nOrg)))) )*1
     table(cTrt)
@@ -232,7 +226,7 @@
   # Generate Factor Version of Student-to-Treatment Assignments
     fTrtAssign = factor(mTrtInd%*%(0:20), labels = c("No Treatment", sOrgNames))
   # Add Location of Assigned Treatment for Each Student
-    mTrtAssignXY = mTrtInd%*%rbind(rep(0,2),TrtXY)
+    mTrtAssignXY = mTrtInd %*% as.matrix(rbind(rep(0,2),TrtXY))
 
     dfMyDataTrt <- data.frame(dfMyData, mTrtInd, fTrtAssign, mTrtAssignXY, StudXY)
     names(dfMyDataTrt) <- c(names(dfMyData), "No Treat", sOrgNames, "Treatment Center Name", colnames(mTrtAssignXY), colnames(StudXY))
@@ -258,7 +252,7 @@
   # The Data Generating Process is the same for both posttests except for increasing mean and increasing error variance
 
     bTreat <- (cTrt > 1)
-    iTrtDose1  <- round((15.0 + (0.07)*(Pretest   - mean(Pretest)) + rnorm(nKids)*3))
+    iTrtDose1  <- round((15.0 + (0.07)*(Pretest - mean(Pretest)) + rnorm(nKids)*3))
     dTrtEff1 <- ((cbind(1, iTrtDose1) %*% t(mOrgParams))*mTrtInd[ , -1] ) %*% vOnesTrt
     Posttest1 <- 50 + 0.9*Pretest + 3.0*bGender + dfMyData$SchEffect + 15*StudFactor + dTrtEff1 + e_Posttest1*30
 
@@ -311,9 +305,6 @@
 
   # # # Can we recover the true parameters? # # #
 
-    # NSM: I need to return to this section. There are more visualizations to explore here, and I've changed the data structure a decent amount since
-      # first writing this section up
-
     SchInds  <- model.matrix(~AssignedSchNum)
     #MyReg1  <- lm(Posttest1 ~ Pretest + bGender + bTreated + SchInds)
     #summary(MyReg1)
@@ -329,9 +320,11 @@
   #-------------------#
   # Save and Clean Up #
   #-------------------#
-    #write.csv
-    save(dfMyDataTrt,file="~/after-hours/Stats-Code-and-Sim-Data/Simulated-Data/dfFinalSimulatedData.Rda")
-    #save(dfMyData,file="~/after-hours/Stats-Code-and-Sim-Data/Simulated-Data/dfMyData.Rda")
+
+    save(mStudTrtDist, file="./Simulated-Data/Student to Treatment Distances.Rda")
+    save(dfTrtData,    file="./Simulated-Data/Treatment Center Data.Rda")
+    save(dfMyDataTrt,  file="./Simulated-Data/dfFinalSimulatedData.Rda")
+    
     detach(e)
     detach(dfMyDataTrt)
 

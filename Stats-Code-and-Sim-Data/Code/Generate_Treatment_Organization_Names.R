@@ -1,6 +1,6 @@
 ####################################################################################
 #                                                                                  #
-# Authors: Nicholas Mader <nmader@chapinhall.org>                                   #
+# Authors: Nicholas Mader <nmader@chapinhall.org>                                  #
 #         Breanna Miller <breanna.a.miller@gmail.com>                              #
 #         Jette Henderson <jette.henderson@gmail.com>                              #
 #         Vidhur Vohra <vvohra@gatech.edu>                                         #
@@ -11,12 +11,12 @@
 #                                                                                  #
 ####################################################################################
 
+setwd("C:/Users/nmader/Documents/GitHub/dssg-after-hours/after-hours/Stats-Code-and-Sim-Data")
 
 makeOrgNames <- function(numOrg = nOrg){
-  sOrgName <- read.table("~/after-hours/Stats-Code-and-Sim-Data/Raw-Data/adjectives.txt", header=F, quote="\"")
+  sOrgName <- read.table("./Raw-Data/adjectives.txt", header=F, quote="\"")
   
-  nPossibleOrgs <- 372
-  # Construct names for Orgs (comes from http://www.fanfiction.net/s/7739576/1/106-Stories-of-Us)
+  nPossibleOrgs <- nrow(sOrgName)
   colnames(sOrgName) <- 'Word'
   OrgTypeDraw <- cut(runif(nPossibleOrgs), breaks = c(0.0, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0), include.lowest = TRUE)
   sOrgType <- as.character(factor(OrgTypeDraw, labels = c('Camp','Program','Center','Initiative','Club','House')))
